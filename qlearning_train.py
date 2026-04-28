@@ -44,5 +44,31 @@ for episode in range(n_episodes):
     epsilon = max(epsilon_min, epsilon * epsilon_decay)
     rewards.append(total_reward)
 
+def evaluate_agent(env, Q, n_games=100_000):
+    wins = losses = draws = 0
+
+    for _ in range(n_games):
+        state, info = env.reset()
+        done = False
+
+        while not done:
+            action = np.argmax(Q[state])
+            state, reward, terminated, truncated, info = env.step(action)
+            done = terminated or truncated
+
+        if reward == 1:
+            wins += 1
+        elif reward == -1:
+            losses += 1
+        else:
+            draws += 1
+
+    return {
+        "wins": wins / n_games,
+        "losses": losses / n_games,
+        "draws": draws / n_games
+    }
+
 print("Entraînement terminé")
 print("Reward moyen :", np.mean(rewards[-10_000:]))
+print(evaluate_agent(env, Q))
