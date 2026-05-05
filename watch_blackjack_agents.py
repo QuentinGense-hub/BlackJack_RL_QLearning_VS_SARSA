@@ -33,9 +33,9 @@ def format_cards(cards):
 
 
 def reward_label(reward):
-    if reward == 1:
+    if reward > 0:
         return "victoire"
-    if reward == -1:
+    if reward < 0:
         return "defaite"
     return "match nul"
 

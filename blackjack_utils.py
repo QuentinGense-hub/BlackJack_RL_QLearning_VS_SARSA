@@ -16,6 +16,7 @@ DEFAULT_EPISODES = 1_000_000
 DEFAULT_EVAL_GAMES = 100_000
 DEFAULT_RECENT_METRICS_GAMES = 100
 DEFAULT_SMOOTHING_BLOCK_SIZE = 10000
+DEFAULT_NATURAL = True
 ACTION_COUNT = 2
 
 MODEL_DIR = Path(__file__).resolve().parent / "models"
@@ -23,8 +24,13 @@ QLEARNING_MODEL_PATH = MODEL_DIR / "blackjack_qlearning.pkl"
 SARSA_MODEL_PATH = MODEL_DIR / "blackjack_sarsa.pkl"
 
 
-def make_env(render_mode=None):
-    return gym.make("Blackjack-v1", sab=True, render_mode=render_mode)
+def make_env(render_mode=None, natural=DEFAULT_NATURAL):
+    return gym.make(
+        "Blackjack-v1",
+        sab=False,
+        natural=natural,
+        render_mode=render_mode,
+    )
 
 
 def create_q_table():
@@ -188,9 +194,9 @@ def evaluate_agent(env, q_table, n_games=DEFAULT_EVAL_GAMES):
             state, reward, terminated, truncated, _ = env.step(action)
             done = terminated or truncated
 
-        if reward == 1:
+        if reward > 0:
             wins += 1
-        elif reward == -1:
+        elif reward < 0:
             losses += 1
         else:
             draws += 1
@@ -215,8 +221,8 @@ def compute_recent_metrics(rewards, n_games=DEFAULT_RECENT_METRICS_GAMES):
             "draws": 0.0,
         }
 
-    wins = sum(reward == 1 for reward in recent_rewards)
-    losses = sum(reward == -1 for reward in recent_rewards)
+    wins = sum(reward > 0 for reward in recent_rewards)
+    losses = sum(reward < 0 for reward in recent_rewards)
     draws = sum(reward == 0 for reward in recent_rewards)
 
     return {
