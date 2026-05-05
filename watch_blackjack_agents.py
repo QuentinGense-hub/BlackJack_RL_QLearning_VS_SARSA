@@ -107,6 +107,36 @@ def play_policy_episode(env, q_table, episode_number, agent_name, delay=0.0, see
             time.sleep(delay)
 
 
+def play_policy_episode_human(
+    env,
+    q_table,
+    episode_number,
+    agent_name,
+    delay=0.0,
+    episode_pause=1.5,
+    seed=None,
+):
+    state, _ = env.reset(seed=seed)
+    done = False
+
+    print(f"{agent_name} | Partie {episode_number} en cours...")
+
+    while not done:
+        action_values = q_table[state]
+        action = int(action_values.argmax())
+        next_state, reward, terminated, truncated, _ = env.step(action)
+        done = terminated or truncated
+        state = next_state
+
+        if delay > 0:
+            time.sleep(delay)
+
+    print(f"{agent_name} | Partie {episode_number} terminee | {reward_label(reward)}")
+
+    if episode_pause > 0:
+        time.sleep(episode_pause)
+
+
 def train_and_record_agent(name, model_path, train_fn, episodes, last_episodes):
     print(
         f"{name}: entrainement sur {episodes} episodes "
@@ -165,7 +195,22 @@ def build_parser():
         "--delay",
         type=float,
         default=0.0,
-        help="Pause en secondes entre deux actions.",
+        help="Pause supplementaire en secondes entre deux actions.",
+    )
+    parser.add_argument(
+        "--render-mode",
+        choices=("human", "text"),
+        default="human",
+        help=(
+            "Mode d'affichage en mode policy. "
+            "human ouvre la fenetre Gymnasium, text garde l'affichage terminal."
+        ),
+    )
+    parser.add_argument(
+        "--episode-pause",
+        type=float,
+        default=1.5,
+        help="Pause en secondes a la fin de chaque partie en mode human.",
     )
     parser.add_argument(
         "--seed",
@@ -227,7 +272,8 @@ def run_policy_mode(args):
             ("SARSA", sarsa_q),
         )
     ):
-        env = make_env()
+        render_mode = "human" if args.render_mode == "human" else None
+        env = make_env(render_mode=render_mode)
 
         try:
             for game_index in range(1, args.games + 1):
@@ -235,14 +281,25 @@ def run_policy_mode(args):
                 if args.seed is not None:
                     episode_seed = args.seed + (agent_index * 10_000) + game_index
 
-                play_policy_episode(
-                    env,
-                    q_table,
-                    game_index,
-                    agent_name,
-                    delay=args.delay,
-                    seed=episode_seed,
-                )
+                if args.render_mode == "human":
+                    play_policy_episode_human(
+                        env,
+                        q_table,
+                        game_index,
+                        agent_name,
+                        delay=args.delay,
+                        episode_pause=args.episode_pause,
+                        seed=episode_seed,
+                    )
+                else:
+                    play_policy_episode(
+                        env,
+                        q_table,
+                        game_index,
+                        agent_name,
+                        delay=args.delay,
+                        seed=episode_seed,
+                    )
         finally:
             env.close()
 

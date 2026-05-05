@@ -23,8 +23,8 @@ QLEARNING_MODEL_PATH = MODEL_DIR / "blackjack_qlearning.pkl"
 SARSA_MODEL_PATH = MODEL_DIR / "blackjack_sarsa.pkl"
 
 
-def make_env():
-    return gym.make("Blackjack-v1", sab=True)
+def make_env(render_mode=None):
+    return gym.make("Blackjack-v1", sab=True, render_mode=render_mode)
 
 
 def create_q_table():
