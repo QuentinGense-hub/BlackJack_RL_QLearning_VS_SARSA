@@ -15,6 +15,7 @@ DEFAULT_EPSILON_DECAY = 0.999995
 DEFAULT_EPISODES = 500_000
 DEFAULT_EVAL_GAMES = 100_000
 DEFAULT_RECENT_METRICS_GAMES = 100
+DEFAULT_SMOOTHING_BLOCK_SIZE = 100
 ACTION_COUNT = 2
 
 MODEL_DIR = Path(__file__).resolve().parent / "models"
@@ -225,6 +226,24 @@ def compute_recent_metrics(rewards, n_games=DEFAULT_RECENT_METRICS_GAMES):
         "losses": losses / sample_size,
         "draws": draws / sample_size,
     }
+
+
+def smooth_rewards_by_block(rewards, block_size=DEFAULT_SMOOTHING_BLOCK_SIZE):
+    if block_size <= 0:
+        raise ValueError("block_size must be positive")
+
+    smoothed_rewards = []
+    episode_indices = []
+
+    for start_index in range(0, len(rewards), block_size):
+        reward_block = rewards[start_index : start_index + block_size]
+        if not reward_block:
+            continue
+
+        smoothed_rewards.append(float(np.mean(reward_block)))
+        episode_indices.append(start_index + len(reward_block))
+
+    return episode_indices, smoothed_rewards
 
 
 def save_q_table(q_table, path):
