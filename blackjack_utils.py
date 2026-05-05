@@ -14,6 +14,7 @@ DEFAULT_EPSILON_MIN = 0.05
 DEFAULT_EPSILON_DECAY = 0.999995
 DEFAULT_EPISODES = 500_000
 DEFAULT_EVAL_GAMES = 100_000
+DEFAULT_RECENT_METRICS_GAMES = 100
 ACTION_COUNT = 2
 
 MODEL_DIR = Path(__file__).resolve().parent / "models"
@@ -197,6 +198,32 @@ def evaluate_agent(env, q_table, n_games=DEFAULT_EVAL_GAMES):
         "wins": wins / n_games,
         "losses": losses / n_games,
         "draws": draws / n_games,
+    }
+
+
+def compute_recent_metrics(rewards, n_games=DEFAULT_RECENT_METRICS_GAMES):
+    recent_rewards = rewards[-n_games:]
+    sample_size = len(recent_rewards)
+
+    if sample_size == 0:
+        return {
+            "sample_size": 0,
+            "mean_reward": 0.0,
+            "wins": 0.0,
+            "losses": 0.0,
+            "draws": 0.0,
+        }
+
+    wins = sum(reward == 1 for reward in recent_rewards)
+    losses = sum(reward == -1 for reward in recent_rewards)
+    draws = sum(reward == 0 for reward in recent_rewards)
+
+    return {
+        "sample_size": sample_size,
+        "mean_reward": float(np.mean(recent_rewards)),
+        "wins": wins / sample_size,
+        "losses": losses / sample_size,
+        "draws": draws / sample_size,
     }
 
 
