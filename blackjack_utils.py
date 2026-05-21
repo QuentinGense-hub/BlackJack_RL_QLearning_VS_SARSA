@@ -12,6 +12,7 @@ DEFAULT_GAMMA = 0.95
 DEFAULT_EPSILON = 1.0
 DEFAULT_EPSILON_MIN = 0.05
 DEFAULT_EPSILON_DECAY = 0.999995
+NO_DECAY_EPSILON_DECAY = 1.0
 DEFAULT_EPISODES = 1_000_000
 DEFAULT_EVAL_GAMES = 100_000
 DEFAULT_RECENT_METRICS_GAMES = 100
@@ -22,6 +23,8 @@ ACTION_COUNT = 2
 MODEL_DIR = Path(__file__).resolve().parent / "models"
 QLEARNING_MODEL_PATH = MODEL_DIR / "blackjack_qlearning.pkl"
 SARSA_MODEL_PATH = MODEL_DIR / "blackjack_sarsa.pkl"
+QLEARNING_NO_DECAY_MODEL_PATH = MODEL_DIR / "blackjack_qlearning_no_decay.pkl"
+SARSA_NO_DECAY_MODEL_PATH = MODEL_DIR / "blackjack_sarsa_no_decay.pkl"
 
 
 def make_env(render_mode=None, natural=DEFAULT_NATURAL):
@@ -232,6 +235,22 @@ def compute_recent_metrics(rewards, n_games=DEFAULT_RECENT_METRICS_GAMES):
         "losses": losses / sample_size,
         "draws": draws / sample_size,
     }
+
+
+def smooth_rewards_by_window(rewards, window_size=DEFAULT_SMOOTHING_BLOCK_SIZE):
+    if window_size <= 0:
+        raise ValueError("window_size must be positive")
+
+    smoothed_rewards = []
+    episode_indices = []
+
+    for episode_index in range(len(rewards)):
+        window_start = max(0, episode_index + 1 - window_size)
+        reward_window = rewards[window_start : episode_index + 1]
+        smoothed_rewards.append(float(np.mean(reward_window)))
+        episode_indices.append(episode_index + 1)
+
+    return episode_indices, smoothed_rewards
 
 
 def smooth_rewards_by_block(rewards, block_size=DEFAULT_SMOOTHING_BLOCK_SIZE):
